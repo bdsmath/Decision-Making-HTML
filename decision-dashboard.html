@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mission-Gated Decision Dashboard</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f2f4f7;
+    margin: 40px;
+}
+h1 { margin-bottom: 20px; }
+
+/* Mission Gate */
+.gate {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    display: inline-block;
+    margin-bottom: 40px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.status {
+    font-weight: bold;
+    font-size: 18px;
+    margin-top: 10px;
+}
+
+/* Slider Board */
+.board {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 30px;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+/* Each slider column */
+.slider-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 90px;
+    position: relative;
+}
+
+/* Vertical slider */
+.slider-box input[type=range] {
+    -webkit-appearance: slider-vertical;
+    writing-mode: bt-lr;
+    height: 200px;
+    width: 20px;
+    background: lightgray;
+    border-radius: 5px;
+    transition: background 0.2s;
+}
+
+/* Label */
+.label {
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+/* Value */
+.value {
+    margin-top: 5px;
+    font-size: 12px;
+    color: #444;
+}
+
+/* Disabled overlay effect */
+.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* Info dropdown */
+.info {
+    display: none;
+    font-size: 12px;
+    color: #555;
+    margin-top: 4px;
+    text-align: center;
+}
+.show-info { display: block; }
+
+/* Info button */
+.info-btn {
+    margin-top: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    color: #007bff;
+    border: none;
+    background: none;
+    text-decoration: underline;
+}
+</style>
+</head>
+<body>
+
+<h1>Mission-Gated Decision Dashboard</h1>
+
+<div class="gate">
+    <h2>Mission Fidelity (Hard Gate)</h2>
+    <label>
+        <input type="checkbox" id="missionToggle">
+        Mission Positive / Neutral
+    </label>
+    <div class="status" id="gateStatus">⛔ NO GO</div>
+</div>
+
+<div class="board" id="sliderBoard">
+
+<!-- 8 sliders -->
+<div class="slider-box">
+    <input type="range" min="0" max="10" value="5" class="slider">
+    <div class="label">Measurable<br>Impact</div>
+    <div class="value">5</div>
+    <button class="info-btn">?</button>
+    <div class="info">Data or historical context; mission & revenue impact.</div>
+</div>
+
+<div class="slider-box">
+    <input type="range" min="0" max="10" value="5" class="slider">
+    <div class="label">Cost to<br>Market</div>
+    <div class="value">5</div>
+    <button class="info-btn">?</button>
+    <div class="info">Organizational lift, opportunity costs.</div>
+</div>
+
+<div class="slider-box">
+    <input type="range" min="0" max="10" value="5" class="slider">
+    <div class="label">Time to<br>Value</div>
+    <div class="value">5</div>
+    <button class="info-btn">?</button>
+    <div class="info">costs and revenue trajectory before we expect to break even</div>
+</div>
+
+<div class="slider-box">
+    <input type="range" min="0" max="10" value="5" class="slider">
+    <div class="label">Risk</div>
+    <div class="value">5</div>
+    <button class="info-btn">?</button>
+    <div class="info">risks and mitigation tactics, ongoing or anticipated market trends..</div>
+</div>
+<div class="slider-box">
+    <input type="range" min="0" max="10" value="5" class="slider">
+    <div class="label">Return</div>
+    <div class="value">5</div>
+    <button class="info-btn">?</button>
+    <div class="info">Risk-adjusted marginal profit potential.</div>
+</div>
+
+<div class="slider-box">
+    <input type="range" min="0" max="10" value="5" class="slider">
+    <div class="label">Strategic<br>Leverage</div>
+    <div class="value">5</div>
+    <button class="info-btn">?</button>
+    <div class="info">everages our unique strengths/IP, strengthens other projects or technical areas</div>
+</div>
+
+<div class="slider-box">
+    <input type="range" min="0" max="10" value="5" class="slider">
+    <div class="label">Executional<br>Fit</div>
+    <div class="value">5</div>
+    <button class="info-btn">?</button>
+    <div class="info">Effort vs skills/staffing; can we execute well?</div>
+</div>
+
+<div class="slider-box">
+    <input type="range" min="0" max="10" value="5" class="slider">
+    <div class="label">Success<br>Metrics</div>
+    <div class="value">5</div>
+    <button class="info-btn">?</button>
+    <div class="info">How we know if it’s working; invest more or pull plug.</div>
+</div>
+
+<div class="slider-box">
+    <input type="range" min="0" max="10" value="5" class="slider">
+    <div class="label">Organizational<br>Momentum</div>
+    <div class="value">5</div>
+    <button class="info-btn">?</button>
+    <div class="info">Feedback from key departments and dependencies; integrated execution; opportunity to iterate future versions</div>
+</div>
+
+</div>
+
+<script>
+const toggle = document.getElementById("missionToggle");
+const status = document.getElementById("gateStatus");
+const sliderBoard = document.getElementById("sliderBoard");
+const sliders = document.querySelectorAll(".slider");
+
+// Mission toggle
+function updateGate() {
+    if(toggle.checked){
+        status.textContent="✅ GO";
+        status.style.color="green";
+        sliderBoard.classList.remove("disabled");
+        sliders.forEach(s=>s.disabled=false);
+    } else {
+        status.textContent="⛔ NO GO";
+        status.style.color="red";
+        sliderBoard.classList.add("disabled");
+        sliders.forEach(s=>s.disabled=true);
+    }
+}
+updateGate();
+toggle.addEventListener("change", updateGate);
+
+// Update slider values
+sliders.forEach(slider=>{
+    const valueDisplay = slider.parentElement.querySelector(".value");
+    slider.addEventListener("input", ()=>{
+        valueDisplay.textContent = slider.value;
+    });
+});
+  
+// Info toggle
+document.querySelectorAll(".info-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+        btn.nextElementSibling.classList.toggle("show-info");
+    });
+});
+</script>
+
+</body>
+</html>
