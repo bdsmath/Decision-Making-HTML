@@ -32,16 +32,50 @@ h1 { margin-bottom: 20px; }
     margin-top: 10px;
 }
 
-/* Slider Board */
-.board {
+/* PHASE LAYOUT */
+.phase-container {
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 20px;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.phase-column {
     background: white;
-    padding: 30px;
+    padding: 15px;
     border-radius: 12px;
+    flex: 1;
+    min-width: 200px;
     box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.phase-column h3 {
+    margin-bottom: 15px;
+}
+
+.drop-zone {
+    flex-grow: 1;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    align-items: flex-start;
+    transition: background-color 0.2s ease;
+    overflow-x: auto;
+}
+
+.drop-zone.drag-over {
+    background-color: #e8f4ff;
+    border-radius: 10px;
+}
+
+.drop-zone::-webkit-scrollbar {
+    height: 6px;
+}
+
+.drop-zone::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 3px;
 }
 
 /* Draggable card */
@@ -49,17 +83,25 @@ h1 { margin-bottom: 20px; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 110px;
-    padding: 10px;
+    width: 90px;
+    padding: 8px;
     background: #ffffff;
     border-radius: 8px;
     box-shadow: 0 3px 8px rgba(0,0,0,0.1);
     cursor: grab;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.slider-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.15);
 }
 
 .slider-box:active { cursor: grabbing; }
 
-.dragging { opacity: 0.4; }
+.dragging {
+    opacity: 0.4;
+}
 
 /* Vertical slider */
 .slider-box input[type=range] {
@@ -75,6 +117,7 @@ h1 { margin-bottom: 20px; }
     font-size: 14px;
     font-weight: bold;
     line-height: 1.2;
+    text-align: center;
 }
 
 /* Value */
@@ -84,7 +127,7 @@ h1 { margin-bottom: 20px; }
     color: #444;
 }
 
-/* Disabled board */
+/* Disabled */
 .disabled {
     opacity: 0.4;
     pointer-events: none;
@@ -159,7 +202,24 @@ h1 { margin-bottom: 20px; }
     <div class="status" id="gateStatus">⛔ NO GO</div>
 </div>
 
-<div class="board" id="sliderBoard"></div>
+<div class="phase-container">
+
+  <div class="phase-column">
+    <h3>Phase 1<br>Revenue Factors</h3>
+    <div class="drop-zone"></div>
+  </div>
+
+  <div class="phase-column">
+    <h3>Phase 2<br>Goodness of Fit</h3>
+    <div class="drop-zone"></div>
+  </div>
+
+  <div class="phase-column">
+    <h3>Phase 3<br>Optimize & Execute</h3>
+    <div class="drop-zone"></div>
+  </div>
+
+</div>
 
 <!-- Modal -->
 <div id="infoModal" class="modal">
@@ -171,9 +231,10 @@ h1 { margin-bottom: 20px; }
 
 <script>
 
-/* ---------- MODAL LOGIC ---------- */
+/* ---------- MODAL ---------- */
 
 const modal = document.getElementById("infoModal");
+const allowedValues = [1, 4, 7, 10];
 const modalText = document.getElementById("modalText");
 const closeBtn = document.querySelector(".close-btn");
 
@@ -191,19 +252,20 @@ window.onclick = (event) => {
 
 const toggle = document.getElementById("missionToggle");
 const status = document.getElementById("gateStatus");
-const board = document.getElementById("sliderBoard");
+const zones = document.querySelectorAll(".drop-zone");
 
 function updateGate() {
     const sliders = document.querySelectorAll(".slider");
+
     if (toggle.checked) {
         status.textContent = "✅ GO";
         status.style.color = "green";
-        board.classList.remove("disabled");
+        zones.forEach(z => z.classList.remove("disabled"));
         sliders.forEach(s => s.disabled = false);
     } else {
         status.textContent = "⛔ NO GO";
         status.style.color = "red";
-        board.classList.add("disabled");
+        zones.forEach(z => z.classList.add("disabled"));
         sliders.forEach(s => s.disabled = true);
     }
 }
@@ -216,50 +278,110 @@ function createSlider(labelText, infoText) {
     box.className = "slider-box";
     box.draggable = true;
 
+    // Render <br> correctly in label
+    const htmlLabel = labelText.replace(/\n/g, "<br>");
+
     box.innerHTML = `
         <input type="range" min="0" max="10" value="5" class="slider">
-        <div class="label">${labelText}</div>
+        <div class="label">${htmlLabel}</div>
         <div class="value">5</div>
         <button class="info-btn">ⓘ</button>
     `;
 
     box.querySelector(".info-btn").dataset.text = infoText;
-
     return box;
 }
 
-const slidersData = [
-["Measurable<br>Impact", `Impact is not conceptual or subtle.
+/* ---------- FULL DESCRIPTIVE DATA ---------- */
 
-The difference it creates should be visible or quantifiable.
+const slidersData = {
+    "Measurable Impact": 
+        `
+        Measurable impact is not conceptual or subtle.
+        An idea, project, or initiative should create effects that are visible, quantifiable, and clearly felt.
+        Efforts that don’t leave a strong, measurable mark may need reevaluation.
+        `,
+        
+    "Mission Cost": 
+        `
+        Mission cost is more than dollars—it’s the investment of time, energy, focus, and resources.
+        Before moving forward, consider:
+            • What opportunities might we miss?
+            • What advantages could competitors gain?
+            • What impact might never happen?
 
-Anything less than a measurable impact may be too tangential for our current needs.`],
+        Understanding the full cost, including potential delays or decisions not made, helps ensure we invest wisely and protect our mission. 
+        Cost is not a simple budget line; it is a debt of time, resources, focus, and revenue.
+        `,
 
-["Mission<br>Cost", `Cost is not a simple budget line; it is a debt of time, resources, focus, and revenue.
+    "Time to Value": 
+        `
+        Time to Value measures how quickly meaningful impact or financial return is realized.
+        Every idea, project, or effort carries a cost; not just dollars, but time, attention, and focus.
+        What is the projected break-even point in which we recoup our costs and begin improving net-revenue
+        `,
 
-• What opportunity will slip away?
-• What ground will competitors seize?
-• What impact will never materialize?
+    "Risks": 
+        `
+        How we manage risk  is about seeing clearly, planning ahead, and protecting the mission.
+        The goal is not to eliminate risk entirely; it’s to identify, anticipate, and mitigate.
+        Risks might include 
+            • Development risks – budget, schedule, technical challenges.
+            • Go-to-market risks – adoption hurdles, timing, market fit.
+            • Competitive risks – rivals’ moves, market shifts.
+            • Implementation risks – internal alignment, operational execution.
+        `,
 
-The cost to the mission includes omission, delay, or indecision.`],
+    "Marginal Revenue": 
+        `
+        Every initiative must justify its place in the portfolio. 
+        What are the costs for each unit sold or program implemented (cost of deliver, cost of goods sold, etc).
+        What are the potential upsides for the investment and effort?
+        `,
 
-["Time to<br>Value", `Time to Value measures how quickly meaningful impact or financial return is realized.`],
+    "Strategic Leverage": 
+        `
+        Strategic Leverage measures how well an initiative amplifies our unique strengths - our IP, expertise, and core capabilities.
+        Does this project strengthen other initiatives, unlock technical advantages, or create opportunities competitors can’t easily replicate?
+        `,
 
-["Risks &<br>Mitigation", `Risk assesses likelihood and magnitude of downside.`],
+    "Executional Fit": 
+        `
+        Executional Fit gauges whether an initiative can realistically be delivered at a high standard.
+        Consider the effort required, the skills of current staff, and past performance in similar initiatives.
+        Can we execute this well, meet quality expectations, and serve our customers effectively?
 
-["Marginal<br>Return", `Return measures projected upside relative to investment.`],
+        `,
 
-["Strategic<br>Leverage", `Strategic Leverage evaluates how well an initiative amplifies our unique strengths.`],
+    "Success Metrics": 
+        `
+       Success Metrics define how we know if an initiative is working—and when to take action.
+        This includes tracking progress during development, pre-sales, and launch phases.
+        Metrics answer questions like: Should we add resources or invest more? Is it time to pivot or pull the plug?
+        `,
 
-["Executional<br>Fit", `Executional Fit assesses our ability to deliver effectively.`],
+    "Organizational Fit": 
+        `
+        Organizational Fit measures how well an initiative fits within the organization and moves forward smoothly.
+        It reflects feedback from key teams to ensure decisions are integrated, resources are aligned, and execution is coordinated.
 
-["Success<br>Metrics", `Success Metrics define how performance will be measured.`],
+        It also considers whether current capabilities, processes, and business plans allow for iteration, adaptation, and improvement as needed.
+        High organizational fit means the initiative can advance confidently; low fit signals friction or gaps that may slow or derail impact.
+        `
+};
 
-["Organizational<br>Momentum", `Organizational Momentum measures internal alignment and energy.`]
-];
+/* ---------- PREPOPULATE CARDS INTO PHASES ---------- */
 
-slidersData.forEach(data => {
-    board.appendChild(createSlider(data[0], data[1]));
+const phaseMapping = {
+    0: ["Marginal Revenue", "Time to Value", "Strategic Leverage", "Measurable Impact"],
+    1: ["Executional Fit", "Organizational Fit", "Risks"],
+    2: ["Mission Cost", "Success Metrics"]
+};
+
+zones.forEach((zone, idx) => {
+    phaseMapping[idx].forEach(label => {
+        zone.appendChild(createSlider(label, slidersData[label]));
+    });
 });
 
 updateGate();
@@ -268,7 +390,13 @@ updateGate();
 
 document.addEventListener("input", function(e) {
     if (e.target.classList.contains("slider")) {
-        e.target.parentElement.querySelector(".value").textContent = e.target.value;
+        // Snap to nearest allowed value
+        let nearest = allowedValues.reduce((prev, curr) => {
+            return Math.abs(curr - e.target.value) < Math.abs(prev - e.target.value) ? curr : prev;
+        });
+        e.target.value = nearest;
+
+        e.target.parentElement.querySelector(".value").textContent = nearest;
     }
 });
 
@@ -276,27 +404,37 @@ document.addEventListener("input", function(e) {
 
 let draggedItem = null;
 
-board.addEventListener("dragstart", e => {
-    if (e.target.classList.contains("slider-box")) {
-        draggedItem = e.target;
-        e.target.classList.add("dragging");
-    }
+document.addEventListener("dragstart", function(e) {
+    const card = e.target.closest(".slider-box");
+    if (!card) return;
+    draggedItem = card;
+    card.classList.add("dragging");
 });
 
-board.addEventListener("dragend", e => {
-    if (e.target.classList.contains("slider-box")) {
-        e.target.classList.remove("dragging");
-    }
+document.addEventListener("dragend", function(e) {
+    const card = e.target.closest(".slider-box");
+    if (!card) return;
+    card.classList.remove("dragging");
+    draggedItem = null;
+    zones.forEach(z => z.classList.remove("drag-over"));
 });
 
-board.addEventListener("dragover", e => {
-    e.preventDefault();
-    const afterElement = getDragAfterElement(board, e.clientX);
-    if (afterElement == null) {
-        board.appendChild(draggedItem);
-    } else {
-        board.insertBefore(draggedItem, afterElement);
-    }
+zones.forEach(zone => {
+    zone.addEventListener("dragover", function(e) {
+        e.preventDefault();
+        if (!draggedItem) return;
+        zone.classList.add("drag-over");
+        const afterElement = getDragAfterElement(zone, e.clientX);
+        if (afterElement == null) {
+            zone.appendChild(draggedItem);
+        } else {
+            zone.insertBefore(draggedItem, afterElement);
+        }
+    });
+
+    zone.addEventListener("dragleave", function() {
+        zone.classList.remove("drag-over");
+    });
 });
 
 function getDragAfterElement(container, x) {
@@ -312,25 +450,19 @@ function getDragAfterElement(container, x) {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-/* ---------- INFO BUTTON HANDLER ---------- */
+/* ---------- INFO BUTTON ---------- */
 
 document.addEventListener("click", function(e) {
     if (e.target.classList.contains("info-btn")) {
-
         let text = e.target.dataset.text;
-
         if (!text && e.target.dataset.info === "mission") {
             text = `
-Fidelity to the mission means that anything outside the mission violates our reason to exist.
-
-Ideas must improve learning or support the scaling of effectiveness.
-
-As we seek revenue, we must protect against mission drift.
-
-Mission fidelity is a go / no-go gate.
+                Mission fidelity means staying true to why we exist.
+                Every idea or project should either improve learning or help us scale our impact.
+                While we pursue growth and revenue, it’s important to avoid initiatives that pull us off course.
+                Think of this as a clear go/no-go checkpoint: if it doesn’t align, it doesn’t move forward.
 `;
         }
-
         openModal(text);
     }
 });
