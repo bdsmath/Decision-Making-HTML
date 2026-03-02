@@ -78,6 +78,7 @@ h1 { margin-bottom: 20px; }
 
 /* Card */
 .slider-box {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -87,7 +88,7 @@ h1 { margin-bottom: 20px; }
     border-radius: 8px;
     box-shadow: 0 3px 8px rgba(0,0,0,0.1);
     transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-    min-height: 160px; /* Fixed height for two-line labels */
+    min-height: 200px;
 }
 
 .slider-box:hover {
@@ -96,11 +97,39 @@ h1 { margin-bottom: 20px; }
 }
 
 /* Vertical slider */
+.slider-container {
+    position: relative;
+    height: 200px;
+    width: 20px;
+    margin-top: 10px;
+}
+
+.slider-track-overlay {
+    position: absolute;
+    top: 0;/*adjust the so that it alights with the center of the blue dot*/
+    left: 9px; /* negative values make the hash marks appear further left */
+    height: 100%;
+    width: 6px;
+    pointer-events: none;
+    z-index: 2; /* put above the slider input */
+}
+
+.slider-tick {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #ccc;
+}
+
+/* Actual slider input */
 .slider-box input[type=range] {
     -webkit-appearance: slider-vertical;
     writing-mode: bt-lr;
     height: 200px;
     width: 20px;
+    position: relative;
+    z-index: 1;
 }
 
 /* Label */
@@ -174,9 +203,17 @@ h1 { margin-bottom: 20px; }
 
 .close-btn:hover { color: red; }
 
-/* Hide scores */
-.phase-score, #overallScore {
+/* Hide per-phase scores */
+.phase-score {
     display: none;
+}
+
+/* Overall score styling */
+#overallScore {
+    display: block;
+    margin-top: 40px;   /* more space below phases */
+    font-weight: bold;
+    font-size: 20px;
 }
 </style>
 </head>
@@ -246,9 +283,7 @@ function openModal(text) {
 }
 
 closeBtn.onclick = () => modal.style.display = "none";
-window.onclick = (event) => {
-    if (event.target == modal) modal.style.display = "none";
-};
+window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; };
 
 /* ---------- MISSION GATE ---------- */
 const toggle = document.getElementById("missionToggle");
@@ -274,7 +309,6 @@ toggle.addEventListener("change", updateGate);
 function getColorForValue(value, label) {
     const invertLabels = ["Time to Value", "Risks", "Mission Cost", "Cost to Launch"];
     const invert = invertLabels.includes(label);
-
     if (invert) {
         switch (parseInt(value)) {
             case 1: return "#33cc33";
@@ -299,23 +333,29 @@ function createSlider(labelText, infoText) {
     const box = document.createElement("div");
     box.className = "slider-box";
 
-    const htmlLabel = labelText.replace(/\n/g, "<br>");
+    box.dataset.weight = defaultWeight;
 
+    const htmlLabel = labelText.replace(/\n/g, "<br>");
     box.innerHTML = `
-        <input type="range" min="1" max="10" value="5" class="slider" step="any">
+        <div class="slider-container">
+            <div class="slider-track-overlay">
+                <div class="slider-tick" style="top: 0;"></div>
+                <div class="slider-tick" style="top: 66.66px;"></div>
+                <div class="slider-tick" style="top: 133.33px;"></div>
+                <div class="slider-tick" style="top: 200px;"></div>
+            </div>
+            <input type="range" min="1" max="10" value="5" class="slider" step="any">
+        </div>
         <div class="label">${htmlLabel}</div>
         <div class="value">5</div>
         <button class="info-btn">ⓘ</button>
     `;
     box.querySelector(".info-btn").dataset.text = infoText;
-
     box.style.backgroundColor = getColorForValue(5, labelText.trim());
-    box.dataset.weight = defaultWeight;
-
     return box;
 }
 
-/* ---------- FULL DESCRIPTIVE DATA ---------- */
+/* ---------- FULL INFORMATIONAL DATA ---------- */
 const slidersData = {
     "Measurable Impact": `
         Measurable impact is not conceptual or subtle.
@@ -393,48 +433,56 @@ zones.forEach((zone, idx) => {
 updateGate();
 
 /* ---------- SCORING ---------- */
+const phaseWeights = [0.5, 0.3, 0.2];/* phase 1 work the most points and down from there*/
 function calculateScores() {
     let overall = 0;
-    let maxTotal = 0;
 
-    zones.forEach((zone, phaseIdx) => {
-        let phaseScore = 0;
+    // First, compute min/max for each phase
+    const phaseScores = Array.from(zones).map((zone, phaseIdx) => {
+        let phaseMin = 0;
         let phaseMax = 0;
+        let phaseScore = 0;
 
         const sliders = zone.querySelectorAll(".slider-box input.slider");
         sliders.forEach(slider => {
             const val = parseInt(slider.value);
-            const label = slider.parentElement.querySelector(".label").textContent.trim();
-            const weight = parseInt(slider.parentElement.dataset.weight || defaultWeight);
+            const label = slider.parentElement.parentElement.querySelector(".label").textContent.trim();
+            const weight = parseInt(slider.parentElement.parentElement.dataset.weight || defaultWeight);
             const invert = ["Time to Value", "Risks", "Mission Cost", "Cost to Launch"].includes(label);
-            const contrib = invert ? -val * weight : val * weight;
+
+            // Slider min/max depending on inverted
+            const sliderMax = invert ? 10 * weight : 10 * weight;
+            const sliderMin = invert ? 1 * weight : 1 * weight;
+
+            // But invert flips contribution
+            const contrib = invert ? (11 - val) * weight : val * weight;
+
             phaseScore += contrib;
             phaseMax += 10 * weight;
+            phaseMin += 1 * weight;
         });
 
-        // Normalize to 100
-        const normalized = Math.max(0, Math.round((phaseScore / phaseMax) * 100));
-        // Phase score hidden
-        overall += normalized;
-        maxTotal += 100;
+        return { phaseScore, phaseMin, phaseMax };
     });
 
-    const overallPercent = Math.max(0, Math.round((overall / maxTotal) * 100));
-    // Overall score hidden
+    // Now normalize each phase between min and max
+    phaseScores.forEach((p, phaseIdx) => {
+        const normalized = Math.round(((p.phaseScore - p.phaseMin) / (p.phaseMax - p.phaseMin)) * 100);
+        overall += normalized * phaseWeights[phaseIdx];
+    });
+
+    const overallPercent = Math.round(overall);
+    document.getElementById("overallScore").textContent = `Overall Score: ${overallPercent}`;
 }
 
 /* ---------- SLIDER VALUE & COLOR UPDATE ---------- */
 document.addEventListener("input", function(e) {
     if (e.target.classList.contains("slider")) {
-        let nearest = allowedValues.reduce((prev, curr) => {
-            return Math.abs(curr - e.target.value) < Math.abs(prev - e.target.value) ? curr : prev;
-        });
+        let nearest = allowedValues.reduce((prev, curr) => Math.abs(curr - e.target.value) < Math.abs(prev - e.target.value) ? curr : prev);
         e.target.value = nearest;
-        e.target.parentElement.querySelector(".value").textContent = nearest;
-
-        const label = e.target.parentElement.querySelector(".label").textContent.trim();
-        e.target.parentElement.style.backgroundColor = getColorForValue(nearest, label);
-
+        e.target.parentElement.parentElement.querySelector(".value").textContent = nearest;
+        const label = e.target.parentElement.parentElement.querySelector(".label").textContent.trim();
+        e.target.parentElement.parentElement.style.backgroundColor = getColorForValue(nearest, label);
         calculateScores();
     }
 });
@@ -447,10 +495,10 @@ document.addEventListener("click", function(e) {
         let text = e.target.dataset.text;
         if (!text && e.target.dataset.info === "mission") {
             text = `
-                Mission fidelity means staying true to why we exist.
-                Every idea or project should either improve learning or help us scale our impact.
-                While we pursue growth and revenue, it’s important to avoid initiatives that pull us off course.
-                Think of this as a clear go/no-go checkpoint: if it doesn’t align, it doesn’t move forward.
+Mission fidelity means staying true to why we exist.
+Every idea or project should either improve learning or help us scale our impact.
+While we pursue growth and revenue, it’s important to avoid initiatives that pull us off course.
+Think of this as a clear go/no-go checkpoint: if it doesn’t align, it doesn’t move forward.
 `;
         }
         openModal(text);
