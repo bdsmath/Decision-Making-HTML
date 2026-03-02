@@ -48,25 +48,23 @@ h1 { margin-bottom: 20px; }
     box-shadow: 0 6px 16px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .phase-column h3 {
     margin-bottom: 15px;
 }
 
+/* Drop zone */
 .drop-zone {
     flex-grow: 1;
     display: flex;
     flex-wrap: nowrap;
     gap: 10px;
     align-items: flex-start;
+    justify-content: center; /* center cards */
     transition: background-color 0.2s ease;
     overflow-x: auto;
-}
-
-.drop-zone.drag-over {
-    background-color: #e8f4ff;
-    border-radius: 10px;
 }
 
 .drop-zone::-webkit-scrollbar {
@@ -78,7 +76,7 @@ h1 { margin-bottom: 20px; }
     border-radius: 3px;
 }
 
-/* Draggable card */
+/* Card */
 .slider-box {
     display: flex;
     flex-direction: column;
@@ -88,19 +86,13 @@ h1 { margin-bottom: 20px; }
     background: #ffffff;
     border-radius: 8px;
     box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-    cursor: grab;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    min-height: 160px; /* Fixed height for two-line labels */
 }
 
 .slider-box:hover {
     transform: translateY(-3px);
     box-shadow: 0 6px 14px rgba(0,0,0,0.15);
-}
-
-.slider-box:active { cursor: grabbing; }
-
-.dragging {
-    opacity: 0.4;
 }
 
 /* Vertical slider */
@@ -118,6 +110,7 @@ h1 { margin-bottom: 20px; }
     font-weight: bold;
     line-height: 1.2;
     text-align: center;
+    height: 36px;
 }
 
 /* Value */
@@ -181,6 +174,10 @@ h1 { margin-bottom: 20px; }
 
 .close-btn:hover { color: red; }
 
+/* Hide scores */
+.phase-score, #overallScore {
+    display: none;
+}
 </style>
 </head>
 
@@ -206,20 +203,25 @@ h1 { margin-bottom: 20px; }
 
   <div class="phase-column">
     <h3>Phase 1<br>Revenue Factors</h3>
+    <div class="phase-score" id="phaseScore0">Score: 0</div>
     <div class="drop-zone"></div>
   </div>
 
   <div class="phase-column">
     <h3>Phase 2<br>Goodness of Fit</h3>
+    <div class="phase-score" id="phaseScore1">Score: 0</div>
     <div class="drop-zone"></div>
   </div>
 
   <div class="phase-column">
     <h3>Phase 3<br>Optimize & Execute</h3>
+    <div class="phase-score" id="phaseScore2">Score: 0</div>
     <div class="drop-zone"></div>
   </div>
 
 </div>
+
+<div id="overallScore">Overall Score: 0</div>
 
 <!-- Modal -->
 <div id="infoModal" class="modal">
@@ -230,11 +232,11 @@ h1 { margin-bottom: 20px; }
 </div>
 
 <script>
+const allowedValues = [1, 4, 7, 10];
+const defaultWeight = 5;
 
 /* ---------- MODAL ---------- */
-
 const modal = document.getElementById("infoModal");
-const allowedValues = [1, 4, 7, 10];
 const modalText = document.getElementById("modalText");
 const closeBtn = document.querySelector(".close-btn");
 
@@ -249,14 +251,12 @@ window.onclick = (event) => {
 };
 
 /* ---------- MISSION GATE ---------- */
-
 const toggle = document.getElementById("missionToggle");
 const status = document.getElementById("gateStatus");
 const zones = document.querySelectorAll(".drop-zone");
 
 function updateGate() {
     const sliders = document.querySelectorAll(".slider");
-
     if (toggle.checked) {
         status.textContent = "✅ GO";
         status.style.color = "green";
@@ -264,66 +264,80 @@ function updateGate() {
         sliders.forEach(s => s.disabled = false);
     } else {
         status.textContent = "⛔ NO GO";
-        status.style.color = "red";
         zones.forEach(z => z.classList.add("disabled"));
         sliders.forEach(s => s.disabled = true);
     }
 }
 toggle.addEventListener("change", updateGate);
 
-/* ---------- SLIDER CREATION ---------- */
+/* ---------- COLOR FUNCTION ---------- */
+function getColorForValue(value, label) {
+    const invertLabels = ["Time to Value", "Risks", "Mission Cost", "Cost to Launch"];
+    const invert = invertLabels.includes(label);
 
+    if (invert) {
+        switch (parseInt(value)) {
+            case 1: return "#33cc33";
+            case 4: return "#66cccc";
+            case 7: return "#ffcc99";
+            case 10: return "#ff4d4d";
+            default: return "#ffffff";
+        }
+    } else {
+        switch (parseInt(value)) {
+            case 1: return "#ff4d4d";
+            case 4: return "#ffcc99";
+            case 7: return "#66cccc";
+            case 10: return "#33cc33";
+            default: return "#ffffff";
+        }
+    }
+}
+
+/* ---------- SLIDER CREATION ---------- */
 function createSlider(labelText, infoText) {
     const box = document.createElement("div");
     box.className = "slider-box";
-    box.draggable = true;
 
-    // Render <br> correctly in label
     const htmlLabel = labelText.replace(/\n/g, "<br>");
 
     box.innerHTML = `
-        <input type="range" min="0" max="10" value="5" class="slider">
+        <input type="range" min="1" max="10" value="5" class="slider" step="any">
         <div class="label">${htmlLabel}</div>
         <div class="value">5</div>
         <button class="info-btn">ⓘ</button>
     `;
-
     box.querySelector(".info-btn").dataset.text = infoText;
+
+    box.style.backgroundColor = getColorForValue(5, labelText.trim());
+    box.dataset.weight = defaultWeight;
+
     return box;
 }
 
 /* ---------- FULL DESCRIPTIVE DATA ---------- */
-
 const slidersData = {
-    "Measurable Impact": 
-        `
+    "Measurable Impact": `
         Measurable impact is not conceptual or subtle.
         An idea, project, or initiative should create effects that are visible, quantifiable, and clearly felt.
         Efforts that don’t leave a strong, measurable mark may need reevaluation.
         `,
-        
-    "Mission Cost": 
-        `
+    "Mission Cost": `
         Mission cost is more than dollars—it’s the investment of time, energy, focus, and resources.
         Before moving forward, consider:
             • What opportunities might we miss?
             • What advantages could competitors gain?
             • What impact might never happen?
-
         Understanding the full cost, including potential delays or decisions not made, helps ensure we invest wisely and protect our mission. 
         Cost is not a simple budget line; it is a debt of time, resources, focus, and revenue.
         `,
-
-    "Time to Value": 
-        `
+    "Time to Value": `
         Time to Value measures how quickly meaningful impact or financial return is realized.
         Every idea, project, or effort carries a cost; not just dollars, but time, attention, and focus.
         What is the projected break-even point in which we recoup our costs and begin improving net-revenue
         `,
-
-    "Risks": 
-        `
-        How we manage risk  is about seeing clearly, planning ahead, and protecting the mission.
+    "Risks": `
+        How we manage risk is about seeing clearly, planning ahead, and protecting the mission.
         The goal is not to eliminate risk entirely; it’s to identify, anticipate, and mitigate.
         Risks might include 
             • Development risks – budget, schedule, technical challenges.
@@ -331,50 +345,42 @@ const slidersData = {
             • Competitive risks – rivals’ moves, market shifts.
             • Implementation risks – internal alignment, operational execution.
         `,
-
-    "Marginal Revenue": 
-        `
+    "Marginal Revenue": `
         Every initiative must justify its place in the portfolio. 
         What are the costs for each unit sold or program implemented (cost of deliver, cost of goods sold, etc).
         What are the potential upsides for the investment and effort?
         `,
-
-    "Strategic Leverage": 
-        `
+    "Cost to Launch": `
+        Every initiative will require some effort in order to launch it.
+        These costs should consider additional cash investment, time to build, opportunity costs of not working on another project.
+        While we'd like to everything with low time to value, we may not be able to afford the upfront investment.
+        `,
+    "Strategic Leverage": `
         Strategic Leverage measures how well an initiative amplifies our unique strengths - our IP, expertise, and core capabilities.
         Does this project strengthen other initiatives, unlock technical advantages, or create opportunities competitors can’t easily replicate?
         `,
-
-    "Executional Fit": 
-        `
+    "Executional Fit": `
         Executional Fit gauges whether an initiative can realistically be delivered at a high standard.
         Consider the effort required, the skills of current staff, and past performance in similar initiatives.
         Can we execute this well, meet quality expectations, and serve our customers effectively?
-
         `,
-
-    "Success Metrics": 
-        `
-       Success Metrics define how we know if an initiative is working—and when to take action.
+    "Success Metrics": `
+        Success Metrics define how we know if an initiative is working—and when to take action.
         This includes tracking progress during development, pre-sales, and launch phases.
         Metrics answer questions like: Should we add resources or invest more? Is it time to pivot or pull the plug?
         `,
-
-    "Organizational Fit": 
-        `
+    "Organizational Fit": `
         Organizational Fit measures how well an initiative fits within the organization and moves forward smoothly.
         It reflects feedback from key teams to ensure decisions are integrated, resources are aligned, and execution is coordinated.
-
         It also considers whether current capabilities, processes, and business plans allow for iteration, adaptation, and improvement as needed.
         High organizational fit means the initiative can advance confidently; low fit signals friction or gaps that may slow or derail impact.
         `
 };
 
-/* ---------- PREPOPULATE CARDS INTO PHASES ---------- */
-
+/* ---------- PREPOPULATE CARDS ---------- */
 const phaseMapping = {
     0: ["Marginal Revenue", "Time to Value", "Strategic Leverage", "Measurable Impact"],
-    1: ["Executional Fit", "Organizational Fit", "Risks"],
+    1: ["Executional Fit", "Organizational Fit", "Risks", "Cost to Launch"],
     2: ["Mission Cost", "Success Metrics"]
 };
 
@@ -386,72 +392,56 @@ zones.forEach((zone, idx) => {
 
 updateGate();
 
-/* ---------- SLIDER VALUE DISPLAY ---------- */
+/* ---------- SCORING ---------- */
+function calculateScores() {
+    let overall = 0;
+    let maxTotal = 0;
 
+    zones.forEach((zone, phaseIdx) => {
+        let phaseScore = 0;
+        let phaseMax = 0;
+
+        const sliders = zone.querySelectorAll(".slider-box input.slider");
+        sliders.forEach(slider => {
+            const val = parseInt(slider.value);
+            const label = slider.parentElement.querySelector(".label").textContent.trim();
+            const weight = parseInt(slider.parentElement.dataset.weight || defaultWeight);
+            const invert = ["Time to Value", "Risks", "Mission Cost", "Cost to Launch"].includes(label);
+            const contrib = invert ? -val * weight : val * weight;
+            phaseScore += contrib;
+            phaseMax += 10 * weight;
+        });
+
+        // Normalize to 100
+        const normalized = Math.max(0, Math.round((phaseScore / phaseMax) * 100));
+        // Phase score hidden
+        overall += normalized;
+        maxTotal += 100;
+    });
+
+    const overallPercent = Math.max(0, Math.round((overall / maxTotal) * 100));
+    // Overall score hidden
+}
+
+/* ---------- SLIDER VALUE & COLOR UPDATE ---------- */
 document.addEventListener("input", function(e) {
     if (e.target.classList.contains("slider")) {
-        // Snap to nearest allowed value
         let nearest = allowedValues.reduce((prev, curr) => {
             return Math.abs(curr - e.target.value) < Math.abs(prev - e.target.value) ? curr : prev;
         });
         e.target.value = nearest;
-
         e.target.parentElement.querySelector(".value").textContent = nearest;
+
+        const label = e.target.parentElement.querySelector(".label").textContent.trim();
+        e.target.parentElement.style.backgroundColor = getColorForValue(nearest, label);
+
+        calculateScores();
     }
 });
 
-/* ---------- DRAG & DROP ---------- */
-
-let draggedItem = null;
-
-document.addEventListener("dragstart", function(e) {
-    const card = e.target.closest(".slider-box");
-    if (!card) return;
-    draggedItem = card;
-    card.classList.add("dragging");
-});
-
-document.addEventListener("dragend", function(e) {
-    const card = e.target.closest(".slider-box");
-    if (!card) return;
-    card.classList.remove("dragging");
-    draggedItem = null;
-    zones.forEach(z => z.classList.remove("drag-over"));
-});
-
-zones.forEach(zone => {
-    zone.addEventListener("dragover", function(e) {
-        e.preventDefault();
-        if (!draggedItem) return;
-        zone.classList.add("drag-over");
-        const afterElement = getDragAfterElement(zone, e.clientX);
-        if (afterElement == null) {
-            zone.appendChild(draggedItem);
-        } else {
-            zone.insertBefore(draggedItem, afterElement);
-        }
-    });
-
-    zone.addEventListener("dragleave", function() {
-        zone.classList.remove("drag-over");
-    });
-});
-
-function getDragAfterElement(container, x) {
-    const elements = [...container.querySelectorAll(".slider-box:not(.dragging)")];
-    return elements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = x - box.left - box.width / 2;
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
+calculateScores();
 
 /* ---------- INFO BUTTON ---------- */
-
 document.addEventListener("click", function(e) {
     if (e.target.classList.contains("info-btn")) {
         let text = e.target.dataset.text;
@@ -466,7 +456,6 @@ document.addEventListener("click", function(e) {
         openModal(text);
     }
 });
-
 </script>
 
 </body>
