@@ -307,7 +307,7 @@ toggle.addEventListener("change", updateGate);
 
 /* ---------- COLOR FUNCTION ---------- */
 function getColorForValue(value, label) {
-    const invertLabels = ["Time to Value", "Risk Profile", "Immediacy", "Cost to Deliver"];
+    const invertLabels = ["Time to Value", "Risk Profile", "Cost to Deliver"];
     const invert = invertLabels.includes(label);
     if (invert) {
         switch (parseInt(value)) {
