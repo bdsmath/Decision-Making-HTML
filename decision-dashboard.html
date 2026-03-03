@@ -307,7 +307,7 @@ toggle.addEventListener("change", updateGate);
 
 /* ---------- COLOR FUNCTION ---------- */
 function getColorForValue(value, label) {
-    const invertLabels = ["Time to Value", "Risks", "Mission Cost", "Cost to Launch"];
+    const invertLabels = ["Time to Value", "Risk Profile", "Cost of Delay", "Cost to Deliver"];
     const invert = invertLabels.includes(label);
     if (invert) {
         switch (parseInt(value)) {
@@ -359,11 +359,52 @@ function createSlider(labelText, infoText) {
 const slidersData = {
     "Measurable Impact": `
         Measurable impact is not conceptual or subtle.
-        An idea, project, or initiative should create effects that are visible, quantifiable, and clearly felt.
+        An idea, project, or initiative should create effects that are visible, quantifiable, or clearly felt.
         Efforts that don’t leave a strong, measurable mark may need reevaluation.
         `,
-    "Mission Cost": `
-        Mission cost is more than dollars—it’s the investment of time, energy, focus, and resources.
+     "Cost to Deliver": `
+        Every initiative will require some effort in order to deliver it to the market.
+        These costs should consider additional cash investment, time to build, opportunity costs of not working on another project.
+        While we'd like to everything with low time to value, we may not be able to afford the upfront investment.
+        `,
+    "Time to Value": `
+        Time to Value measures how quickly meaningful impact or financial return is realized.
+        Every idea, project, or effort carries a cost; not just dollars, but time, attention, and focus.
+        What is the projected break-even point in which we recoup our costs and begin improving net-revenue
+        `,
+    "Risk Profile": `
+        How we manage risk is about seeing clearly, planning ahead, and protecting the mission.
+        The goal is not to eliminate risk entirely; it’s to identify, anticipate, and mitigate.
+        Risk Profile might include 
+            • Development Risk Profile – budget, schedule, technical challenges.
+            • Go-to-market Risk Profile – adoption hurdles, timing..
+            • Competitive Risk Profile – rivals’ moves, market shifts.
+            • Implementation Risk Profile – internal alignment, operational execution.
+        `,
+    "Revenue Potential": `
+        Every initiative must justify its place in the portfolio. 
+        What are the costs for each unit sold or program implemented (cost of deliver, cost of goods sold, etc).
+        What are the potential upsides for the investment and effort?
+        Marginal costs, marginal effort
+        `,
+    "Executional Fit": `
+        Executional Fit gauges whether an initiative can realistically be delivered at a high standard.
+        Consider the effort required, the skills of current staff, and past performance in similar initiatives.
+        Can we execute this well, meet quality expectations, and serve our customers effectively?
+        How well an initiative amplifies our unique strengths - our IP, expertise, and core capabilities.
+
+        Executional Fit measures how well an initiative fits within the organization and moves forward smoothly.
+        It reflects feedback from key teams to ensure decisions are integrated, resources are aligned, and execution is coordinated.
+        It also considers whether current capabilities, processes, and business plans allow for iteration, adaptation, and improvement as needed.
+        High organizational fit means the initiative can advance confidently; low fit signals friction or gaps that may slow or derail impact.
+        `,
+    "Market Opportunity": `
+        market fit, current and future market potential, market trends/size, anticipated market
+        Market Opportunity measures how well an initiative famplifies our unique strengths - our IP, expertise, and core capabilities.
+        Does this project strengthen other initiatives, unlock technical advantages, or create opportunities competitors can’t easily replicate?
+        `,
+    "Cost of Delay": `
+        Cost of Delay is more than dollars—it’s the investment of time, energy, focus, and resources.
         Before moving forward, consider:
             • What opportunities might we miss?
             • What advantages could competitors gain?
@@ -371,57 +412,79 @@ const slidersData = {
         Understanding the full cost, including potential delays or decisions not made, helps ensure we invest wisely and protect our mission. 
         Cost is not a simple budget line; it is a debt of time, resources, focus, and revenue.
         `,
-    "Time to Value": `
-        Time to Value measures how quickly meaningful impact or financial return is realized.
-        Every idea, project, or effort carries a cost; not just dollars, but time, attention, and focus.
-        What is the projected break-even point in which we recoup our costs and begin improving net-revenue
-        `,
-    "Risks": `
-        How we manage risk is about seeing clearly, planning ahead, and protecting the mission.
-        The goal is not to eliminate risk entirely; it’s to identify, anticipate, and mitigate.
-        Risks might include 
-            • Development risks – budget, schedule, technical challenges.
-            • Go-to-market risks – adoption hurdles, timing, market fit.
-            • Competitive risks – rivals’ moves, market shifts.
-            • Implementation risks – internal alignment, operational execution.
-        `,
-    "Marginal Revenue": `
-        Every initiative must justify its place in the portfolio. 
-        What are the costs for each unit sold or program implemented (cost of deliver, cost of goods sold, etc).
-        What are the potential upsides for the investment and effort?
-        `,
-    "Cost to Launch": `
-        Every initiative will require some effort in order to launch it.
-        These costs should consider additional cash investment, time to build, opportunity costs of not working on another project.
-        While we'd like to everything with low time to value, we may not be able to afford the upfront investment.
-        `,
-    "Strategic Leverage": `
-        Strategic Leverage measures how well an initiative amplifies our unique strengths - our IP, expertise, and core capabilities.
-        Does this project strengthen other initiatives, unlock technical advantages, or create opportunities competitors can’t easily replicate?
-        `,
-    "Executional Fit": `
-        Executional Fit gauges whether an initiative can realistically be delivered at a high standard.
-        Consider the effort required, the skills of current staff, and past performance in similar initiatives.
-        Can we execute this well, meet quality expectations, and serve our customers effectively?
-        `,
     "Success Metrics": `
         Success Metrics define how we know if an initiative is working—and when to take action.
-        This includes tracking progress during development, pre-sales, and launch phases.
+        This includes tracking progress during development, pre-sales, and Deliver phases.
         Metrics answer questions like: Should we add resources or invest more? Is it time to pivot or pull the plug?
-        `,
-    "Organizational Fit": `
-        Organizational Fit measures how well an initiative fits within the organization and moves forward smoothly.
-        It reflects feedback from key teams to ensure decisions are integrated, resources are aligned, and execution is coordinated.
-        It also considers whether current capabilities, processes, and business plans allow for iteration, adaptation, and improvement as needed.
-        High organizational fit means the initiative can advance confidently; low fit signals friction or gaps that may slow or derail impact.
         `
+};
+
+/* ---------- PER-SLIDER, PER-VALUE DESCRIPTIONS ---------- */
+const sliderValueDescriptions = {
+  "Measurable Impact": {
+    1: "Measurable Impact = 1: The impact is unkonwn and can't be felt. We don't have impact measures.",
+    4: "Measurable Impact = 4: There is some noticeable change, but likely limited. Not a game changer for the mission nor the business",
+    7: "Measurable Impact = 7: Significant measurable upside to the mission or the business.",
+    10: "Measurable Impact = 10: Strong measurable impact on the mission or business. The impact is wide-reaching."
+  },
+  "Cost to Deliver": {
+    1: "Cost to Deliver = 1: We can get this to market almost immediately.",
+    4: "Cost to Deliver = 4: This costs about as much as building a new ST Math game",
+    7: "Cost to Deliver = 7: Getting this to market is like building a new grade in InsightMath",
+    10: "Cost to Deliver = 10: Getting this to market is likely building InsightMath from scratch"
+  },
+  
+  "Time to Value": {
+    1: "Time to Value = 1: Immediate benefits. Weeks, not months.",
+    4: "Time to Value = 4: Short-term benefits. 3 to 6 months",
+    7: "Time to Value = 7: Medium-term benefits. 9 - 12 months",
+    10: "Time to Value = 10: Long-term benefits. Greater than 18 months"
+  },
+  "Risk Profile": {
+    1: "Risk Profile = 1: Very low risk.",
+    4: "Risk Profile = 4: Not too risky in the near term, but needs reevaluation in a year.",
+    7: "Risk Profile = 7: Moderate risk. It's a long shot, but not impossible.",
+    10: "Risk Profile = 10: High risk. This is outside our wheelhouse and largely unknown."
+  },
+  "Revenue Potential": {
+    1: "Revenue Potential = 1: It won't hurt, but there's not much going on.",
+    4: "Revenue Potential = 4: It will help some, but not a pillar of revenue",
+    7: "Revenue Potential = 7: This is a game changer likely a year or so out",
+    10: "Revenue Potential = 10: This is a game changer within 6 months."
+  },
+  "Executional Fit": {
+    1: "Executional Fit = 1: Poor fit. This is not within our wheelhouse. It would require spinning up an entirely new arm and strategic fit is unclear.",
+    4: "Executional Fit = 4: This fits mostly within existing staff skills, we can execute it well. ",
+    7: "Executional Fit = 7: The idea fits all existing skills, offers room for ongoing iteration and versioning, and we can execute this well.",
+    10: "Executional Fit = 10: This is or primary skill set across all teams and relies on our sole source advantages"
+  },
+  
+  "Market Opportunity": {
+    1: "Market Opportunity = 1: The market is small and likely shrinking, or our market fit is poor.",
+    4: "Market Opportunity = 4: We'll do OK in smaller segments - likely only those sites or districts that value student experience above all else.",
+    7: "Market Opportunity = 7: We have good fit with current and anticipated market trends",
+    10: "Market Opportunity = 10: The market is strong, entering or expanding in this market is likely a game change for the mission or business"
+  },
+  "Cost of Delay": {
+    1: "Cost of Delay = 1: The work can be done 12 or more months down the road.",
+    4: "Cost of Delay = 4: The work can be done 6 to 9 months from now",
+    7: "Cost of Delay = 7: The work can be done 3 to 6 months from now",
+    10: "Cost of Delay = 10: The work should start immediately"
+  },
+  
+  "Success Metrics": {
+    1: "Success Metrics = 1: No clear metrics. Everything is a gut reaction.",
+    4: "Success Metrics = 4: Limited or vague metrics, but a general sense that we'd know when to approve or kill the project",
+    7: "Success Metrics = 7: Well-defined metrics are built and will help determine ongoing go/no-go decisions",
+    10: "Success Metrics = 10: Comprehensive metrics are complete and approved."
+  }
 };
 
 /* ---------- PREPOPULATE CARDS ---------- */
 const phaseMapping = {
-    0: ["Marginal Revenue", "Time to Value", "Strategic Leverage", "Measurable Impact"],
-    1: ["Executional Fit", "Organizational Fit", "Risks", "Cost to Launch"],
-    2: ["Mission Cost", "Success Metrics"]
+    0: ["Revenue Potential", "Time to Value", "Market Opportunity", "Measurable Impact"],
+    1: ["Executional Fit","Risk Profile", "Cost to Deliver"],
+    2: ["Cost of Delay", "Success Metrics"]
 };
 
 zones.forEach((zone, idx) => {
@@ -448,7 +511,7 @@ function calculateScores() {
             const val = parseInt(slider.value);
             const label = slider.parentElement.parentElement.querySelector(".label").textContent.trim();
             const weight = parseInt(slider.parentElement.parentElement.dataset.weight || defaultWeight);
-            const invert = ["Time to Value", "Risks", "Mission Cost", "Cost to Launch"].includes(label);
+            const invert = ["Time to Value", "Risk Profile", "Cost of Delay", "Cost to Deliver"].includes(label);
 
             // Slider min/max depending on inverted
             const sliderMax = invert ? 10 * weight : 10 * weight;
@@ -487,6 +550,21 @@ document.addEventListener("input", function(e) {
     }
 });
 
+// Add double-click listener on slider thumbs to show full description
+document.querySelectorAll('.slider-box input[type=range]').forEach(slider => {
+   slider.addEventListener('dblclick', () => {
+    const box = slider.closest('.slider-box');
+    const label = box.querySelector('.label').textContent.trim();
+    const value = parseInt(slider.value);
+    
+    const text = (sliderValueDescriptions[label] && sliderValueDescriptions[label][value]) 
+                 ? sliderValueDescriptions[label][value] 
+                 : "No detailed description available.";
+
+    openModal(text);
+});
+});
+
 calculateScores();
 
 /* ---------- INFO BUTTON ---------- */
@@ -495,11 +573,11 @@ document.addEventListener("click", function(e) {
         let text = e.target.dataset.text;
         if (!text && e.target.dataset.info === "mission") {
             text = `
-Mission fidelity means staying true to why we exist.
-Every idea or project should either improve learning or help us scale our impact.
-While we pursue growth and revenue, it’s important to avoid initiatives that pull us off course.
-Think of this as a clear go/no-go checkpoint: if it doesn’t align, it doesn’t move forward.
-`;
+                Mission fidelity means staying true to why we exist.
+                Every idea or project should either improve learning or help us scale our impact.
+                While we pursue growth and revenue, it’s important to avoid initiatives that pull us off course.
+                Think of this as a clear go/no-go checkpoint: if it doesn’t align, it doesn’t move forward.
+                `;
         }
         openModal(text);
     }
