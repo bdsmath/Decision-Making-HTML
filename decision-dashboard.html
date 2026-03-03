@@ -307,7 +307,7 @@ toggle.addEventListener("change", updateGate);
 
 /* ---------- COLOR FUNCTION ---------- */
 function getColorForValue(value, label) {
-    const invertLabels = ["Time to Value", "Risk Profile", "Cost of Delay", "Cost to Deliver"];
+    const invertLabels = ["Time to Value", "Risk Profile", "Immediacy", "Cost to Deliver"];
     const invert = invertLabels.includes(label);
     if (invert) {
         switch (parseInt(value)) {
@@ -403,8 +403,8 @@ const slidersData = {
         Market Opportunity measures how well an initiative famplifies our unique strengths - our IP, expertise, and core capabilities.
         Does this project strengthen other initiatives, unlock technical advantages, or create opportunities competitors can’t easily replicate?
         `,
-    "Cost of Delay": `
-        Cost of Delay is more than dollars—it’s the investment of time, energy, focus, and resources.
+    "Immediacy": `
+        Immediacy is more than dollars—it’s the investment of time, energy, focus, and resources.
         Before moving forward, consider:
             • What opportunities might we miss?
             • What advantages could competitors gain?
@@ -465,11 +465,11 @@ const sliderValueDescriptions = {
     7: "Market Opportunity = 7: We have good fit with current and anticipated market trends",
     10: "Market Opportunity = 10: The market is strong, entering or expanding in this market is likely a game change for the mission or business"
   },
-  "Cost of Delay": {
-    1: "Cost of Delay = 1: The work can be done 12 or more months down the road.",
-    4: "Cost of Delay = 4: The work can be done 6 to 9 months from now",
-    7: "Cost of Delay = 7: The work can be done 3 to 6 months from now",
-    10: "Cost of Delay = 10: The work should start immediately"
+  "Immediacy": {
+    1: "Immediacy = 1: The work can be done 12 or more months down the road.",
+    4: "Immediacy = 4: The work can be done 6 to 9 months from now",
+    7: "Immediacy = 7: The work can be done 3 to 6 months from now",
+    10: "Immediacy = 10: The work should start immediately"
   },
   
   "Success Metrics": {
@@ -484,8 +484,8 @@ const sliderValueDescriptions = {
 const phaseMapping = {
     0: ["Revenue Potential", "Time to Value", "Market Opportunity", "Measurable Impact"],
     1: ["Executional Fit","Risk Profile", "Cost to Deliver"],
-    2: ["Cost of Delay", "Success Metrics"]
-};
+    2: ["Immediacy", "Success Metrics"]
+}; 
 
 zones.forEach((zone, idx) => {
     phaseMapping[idx].forEach(label => {
@@ -511,7 +511,7 @@ function calculateScores() {
             const val = parseInt(slider.value);
             const label = slider.parentElement.parentElement.querySelector(".label").textContent.trim();
             const weight = parseInt(slider.parentElement.parentElement.dataset.weight || defaultWeight);
-            const invert = ["Time to Value", "Risk Profile", "Cost of Delay", "Cost to Deliver"].includes(label);
+            const invert = ["Time to Value", "Risk Profile", "Cost to Deliver"].includes(label);
 
             // Slider min/max depending on inverted
             const sliderMax = invert ? 10 * weight : 10 * weight;
